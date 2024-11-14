@@ -1,0 +1,86 @@
+# generate card :
+#	to screen :	./textCard.sh -i input.txt
+#	to file :	./textCard.sh -i input.txt -o output.txt
+
+# this is a comment
+blank
+
+# blank lines are allowed too
+
+1string|left|PURE LEFT
+1string|left| LEFT WITH A SPACE
+1string|left|LEFT WITH A LINE |-|
+blank
+1string|right|PURE RIGHT
+1string|right|RIGHT WITH A SPACE |
+1string|right| RIGHT WITH A LINE|=|
+blank
+padded|left|PADDED LEFT|5||
+padded|left| PADDED LEFT WITH CHARACTERS AND SPACES |5|=|
+padded|right|PADDED RIGHT|5||
+padded|right| PADDED RIGHT WITH CHARACTERS AND SPACES |5|=|
+blank
+blank
+
+
+2strings|leftright|LEFT PART OF (LEFT+RIGHT)|RIGHT PART OF (LEFT+RIGHT)|
+2strings|leftright| LEFT PART OF (LEFT+RIGHT), WITH SPACE|RIGHT PART OF (LEFT+RIGHT), WITH SPACE |
+2strings|leftright|LEFT PART OF (LEFT+RIGHT WITH LINE)|RIGHT PART OF (LEFT+RIGHT WITH LINE)| + |
+blank
+blank
+
+
+# centered + moved 1 char on the left
+# When using "center", the number of remaining spaces on the line is spread evenly on the left + right of the text.
+# Then, to move the text 1 char left (or right), you have to add 2 spaces on the right (or left) of the text.
+1string|center|CENTER 1  |
+
+# centered
+1string|center|CENTER 2
+
+# centered + moved 1 char on the right
+1string|center|  CENTER 3
+blank
+blank
+
+
+######################################### ERRORS ####################################################
+# Commands below trigger various errors and are use to
+# - make sure errors are caught
+# - visualize error message
+
+######################################### 1string
+# triggers error : "line too long"
+#1string|left|Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vivamus efficitur quam ex, id accumsan justo faucibus vitae.
+
+######################################### padded
+# triggers error : "line too long"
+#padded|left|Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vivamus efficitur quam ex, id accumsan justo faucibus vitae.|3|
+
+# triggers error (with page width = 106 chars) :
+#padded|left|PADDED LEFT - TRIGGER ERROR NULL REST_OF_LINE_PADDING|53|=|
+# fix
+#1string|right|PADDED LEFT - TRIGGER ERROR NULL REST_OF_LINE_PADDING|=|
+
+# triggers error (with page width = 106 chars) :
+#padded|right|PADDED RIGHT - TRIGGER ERROR NULL REST_OF_LINE_PADDING|52|=|
+# fix
+#1string|left|PADDED RIGHT - TRIGGER ERROR NULL REST_OF_LINE_PADDING|=|
+
+######################################### 2strings
+# triggers error : "useless use of '2strings|leftright|<left>|<right>'"
+#2strings|leftright|TEST LEFT
+# fix
+#1string|left|TEST LEFT
+
+# as above on the other side
+#2strings|leftright||TEST RIGHT
+# fix
+#1string|right|TEST RIGHT
+
+# triggers error : "useless use of '2strings|leftright|<left>|<right>'"
+#2strings|leftright|
+# fix
+#blank
+
+######################################### THE END ###################################################
