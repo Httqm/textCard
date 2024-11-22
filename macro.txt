@@ -1,0 +1,33 @@
+# Don't forget trailing '§'
+
+######################################### macros definition #########################################
+
+######################################### macros with 1 argument
+macro§basicHeader§1string|left|$1§
+macro§headerWithLine§1string|left|$1|_|§
+
+macro§paddedHeaderWithEqualSigns§padded|left|[ $1 ]|5|=|§
+
+
+######################################### macros with 2 arguments
+macro§leftAndRight§2strings|leftright|$1|$2|§
+macro§leftPlusRight§2strings|leftright|$1|$2| +|§
+
+
+######################################### body, using macros ########################################
+blank
+basicHeader§This is a basic header§
+basicHeader§Using my basic header again§
+blank
+
+headerWithLine§This is a header with a line§
+headerWithLine§Another header with a line§
+blank
+
+paddedHeaderWithEqualSigns§a padded header with equal signs§
+paddedHeaderWithEqualSigns§Here it is again !§
+blank
+
+leftAndRight§LEFT§RIGHT§
+leftPlusRight§LEFT(plus)§(plus)RIGHT§
+blank

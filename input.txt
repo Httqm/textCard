@@ -2,10 +2,7 @@
 #	to screen :	./textCard.sh -i input.txt
 #	to file :	./textCard.sh -i input.txt -o output.txt
 
-# this is a comment
 blank
-
-# blank lines are allowed too
 
 1string|left|PURE LEFT
 1string|left| LEFT WITH A SPACE
@@ -41,13 +38,12 @@ blank
 # centered + moved 1 char on the right
 1string|center|  CENTER 3
 blank
-blank
 
 
 ######################################### ERRORS ####################################################
-# Commands below trigger various errors and are use to
+# Commands below trigger various errors and are used to
 # - make sure errors are caught
-# - visualize error message
+# - check error messages
 
 ######################################### 1string
 # triggers error : "line too long"
