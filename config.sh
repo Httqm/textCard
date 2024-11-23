@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 
 defaultOutputFile='/dev/stdout'
-separator='|'
+commandParametersSeparator='|'
+macroArgumentsSeparator='§'
 
 # A4 portrait, Firefox
 nbLines=75

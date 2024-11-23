@@ -11,6 +11,10 @@ for functionFile in config.sh textCard_functions.sh functions.sh; do
 done
 
 
+# see explaination in 'test_makeTextLinePadded.sh'
+inputFile='/dev/null'
+
+
 test_makeTextLine2Strings_nonEmptyString() {
 	# 'makeTextLine2Strings' is designed to output "<left><padding><right>".
 	# Calling it with either '<left>' or '<right>' string being empty is useless since
@@ -19,10 +23,10 @@ test_makeTextLine2Strings_nonEmptyString() {
 	while read stringLeft stringRight; do
 		textLeft=$(repeatStringUpToNCharacters 'L' "$length1")
 		textRight=$(repeatStringUpToNCharacters 'R' "$length2")
-		output=$(makeTextLine2Strings '/dev/stdout' 'whatever' "$textLeft" "$textRight")
+		output=$(makeTextLine2Strings $inputFile '/dev/stdout' 'whatever' "$textLeft" "$textRight")
 #		echo "$position $length1 $length2 [$output]"
 		# This is tested before checking the 'leftright/other', hence "whatever"
-		assert_status_code 1 "makeTextLine2Strings '/dev/stdout' 'whatever' $stringLeft $stringRight"
+		assert_status_code 1 "makeTextLine2Strings $inputFile '/dev/stdout' 'whatever' $stringLeft $stringRight"
 	done < <(cat <<-EOF
 		left	''
 		''		right
@@ -39,7 +43,7 @@ test_makeTextLine2Strings_generatedStringLength() {
 			[ "$lengthRight" -eq 0 ] && lengthRight=1
 			textLeft=$(repeatStringUpToNCharacters 'L' "$lengthLeft")
 			textRight=$(repeatStringUpToNCharacters 'R' "$lengthRight")
-			output=$(makeTextLine2Strings '/dev/stdout' "$position" "$textLeft" "$textRight")
+			output=$(makeTextLine2Strings $inputFile '/dev/stdout' "$position" "$textLeft" "$textRight")
 #			echo "$position $lengthLeft $lengthRight [$output]"
 			assert_equals "$nbColumns" "${#output}"
 		done < <(cat <<-EOF
@@ -68,10 +72,10 @@ test_makeTextLine2Strings_inputStringsTooLong() {
 	while read lengthLeft lengthRight; do
 		textLeft=$(repeatStringUpToNCharacters 'L' "$lengthLeft")
 		textRight=$(repeatStringUpToNCharacters 'R' "$lengthRight")
-		output=$(makeTextLine2Strings '/dev/stdout' 'whatever' "$textLeft" "$textRight")
+		output=$(makeTextLine2Strings $inputFile '/dev/stdout' 'whatever' "$textLeft" "$textRight")
 #		echo "$position $lengthLeft $lengthRight [$output]"
 		# This is tested before checking the left/center/right, hence "whatever"
-		assert_status_code 1 "makeTextLine2Strings '/dev/stdout' 'whatever' $textLeft $textRight"
+		assert_status_code 1 "makeTextLine2Strings $inputFile '/dev/stdout' 'whatever' $textLeft $textRight"
 	done < <(cat <<-EOF
 		0							$((nbColumns+1))
 		$((nbColumns+1)) 			0
@@ -92,7 +96,7 @@ test_makeTextLine2Strings_leftright() {
 		textRight=$(repeatStringUpToNCharacters 'R' "$lengthRight")
 		padding=$(repeatStringUpToNCharacters "$blankCharacter" $((nbColumns-lengthLeft-lengthRight)))
 		expected="$textLeft$padding$textRight"
-		output=$(makeTextLine2Strings '/dev/stdout' 'leftright' "$textLeft" "$textRight")
+		output=$(makeTextLine2Strings $inputFile '/dev/stdout' 'leftright' "$textLeft" "$textRight")
 #		echo "expected: '$expected', output: '$output'"
 		assert_equals "$expected" "$output"
 	done < <(cat <<-EOF

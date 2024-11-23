@@ -40,8 +40,8 @@ getCliParameters() {
 				# TODO: replace 'dict xx available' with 'spelling (xx) ok' (see below)
 				;;
 			i)
-				inputFile="$OPTARG"
-#				echo "inputFile : '$inputFile'"
+				cliInputFile="$OPTARG"
+#				echo "inputFile : '$cliInputFile'"
 				;;
 			h)	usage; exit 0 ;;
 			o)
@@ -55,18 +55,19 @@ getCliParameters() {
 	# always check '-i' flag :
 	#	- '-i' specified with no value = error
 	#	- '-i' omitted = error
-	[ ! -e "$inputFile" ] && { message error "input file '$inputFile' not found"; exit 1; }
+	[ ! -e "$cliInputFile" ] && { message error "input file '$cliInputFile' not found"; exit 1; }
 	}
 
 
 makeCard() {
 	local inputFile=$1
 	local outputFile=$2
+	local cliInputFile=$3	# used to report errors
 	while read line; do
 
 		[[ "$line" =~ ^(#|$) ]] && continue		# ignore comments and blank lines
 
-		IFS="$separator" read -a myArray <<< "$line"
+		IFS="$commandParametersSeparator" read -a myArray <<< "$line"
 #		echo "${myArray[0]} ${myArray[1]}"
 		case "${myArray[0]}" in
 			blank)
@@ -74,23 +75,20 @@ makeCard() {
 				((nbLinesOnCard++))
 				;;
 			1string)
-				makeTextLine1String "$outputFile" "${myArray[1]}" "${myArray[2]}" "${myArray[3]}"
+				makeTextLine1String "$cliInputFile" "$outputFile" "${myArray[1]}" "${myArray[2]}" "${myArray[3]}"
 				((nbLinesOnCard++))
 				;;
 			2strings)
-				makeTextLine2Strings "$outputFile" "${myArray[1]}" "${myArray[2]}" "${myArray[3]}" "${myArray[4]}"
+				makeTextLine2Strings "$cliInputFile" "$outputFile" "${myArray[1]}" "${myArray[2]}" "${myArray[3]}" "${myArray[4]}"
 				((nbLinesOnCard++))
 				;;
 			padded)
-
-# padded|left|PADDED LEFT|5||
-# padded|left|PADDED LEFT WITH LINE|5|=|
-
-				makeTextLinePadded "$outputFile" "${myArray[1]}" "${myArray[2]}" "${myArray[3]}" "${myArray[4]}"
+				makeTextLinePadded "$cliInputFile" "$outputFile" "${myArray[1]}" "${myArray[2]}" "${myArray[3]}" "${myArray[4]}"
 				((nbLinesOnCard++)) # TODO: factorize the ++ at the end of the 'case'
 				;;
 			*)
-				message error "unknown command '${myArray[0]}' in '$inputFile'"
+				lineNumber=$(grep -nF "${myArray[0]}" "$cliInputFile" | cut -d ':' -f 1)
+				message error "unknown command '${myArray[0]}' in '$cliInputFile' at line $lineNumber"
 				exit 1
 				;;
 		esac
@@ -126,6 +124,17 @@ spellCheckInputFile() {
 	}
 
 
+copyPayloadIntoFile() {
+	# copy everything from "$sourceFile" into "$destinationFile" EXCEPT
+	#	- macros
+	#	- comments
+	#	- blank lines
+	local sourceFile=$1
+	local destinationFile=$2
+	grep -Ev '^(macro|#|$)' "$sourceFile" > "$destinationFile"
+	}
+
+
 main() {
 	directoryOfThisScript="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 	for functionFile in config.sh textCard_functions.sh functions.sh; do
@@ -139,13 +148,31 @@ main() {
 	getCliParameters "$@"
 
 	[ -n "$dictionary" ] && {
-		spellCheckInputFile "$inputFile" "$dictionary" && message info "👍 Spelling ($dictionary) OK"
+		spellCheckInputFile "$cliInputFile" "$dictionary" && message info "Spelling ($dictionary) OK 👍"
 		}
 
 	> "$outputFile"
 	# TODO: use exec > /path/to/logFile 2>&1 construct (?)
 
-	makeCard "$inputFile" "$outputFile"
+	# handle macros
+	if $(grep -Eq "^[^#]*$macroArgumentsSeparator" "$cliInputFile") ; then
+		message info 'macro(s) found'
+
+		tmpFile=$(mktemp --tmpdir='/run/shm' $(basename $0).XXXXXXXXXXXX.tmp)
+#		echo "$tmpFile"
+
+		copyPayloadIntoFile "$cliInputFile" "$tmpFile"
+		runMacros "$cliInputFile" "$tmpFile"
+
+#		cat "$tmpFile"
+		makeCard "$tmpFile" "$outputFile" "$cliInputFile"
+
+		[ -f "$tmpFile" ] && rm "$tmpFile"
+	else
+		message info 'no macro found, working as usual'
+		makeCard "$cliInputFile" "$outputFile" "$cliInputFile"
+	fi
+
 	checkNbLinesOnCard
 	[ "$outputFile" != "$defaultOutputFile" ] && message ok "Output written to: '$outputFile'"
 	}

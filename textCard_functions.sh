@@ -18,16 +18,17 @@ repeatStringUpToNCharacters() {
 checkStringIsShortherThan() {
 	local string=$1
 	local maxLength=$2
+	local cliInputFile=$3
 #	echo "string: '$string', length: '${#string}', maxLength: '$maxLength'"
 
 	if [ "${#string}" -gt "$maxLength" ] ; then
 
-		lineNumber=$(grep -nF "$string" "$inputFile" | cut -d ':' -f 1)
+		lineNumber=$(grep -nF "$string" "$cliInputFile" | cut -d ':' -f 1)
 		# NB: this may cause an error when running unit tests :
 		#	grep: : No such file or directory
 		# explanation + workaround in 'tests/test_makeTextLinePadded.sh',
 
-		message error "The line '$string' is longer (${#string}) than the max length ($maxLength)\ncheck input file '$inputFile' at line $lineNumber"
+		message error "The line '$string' is longer (${#string}) than the max length ($maxLength)\ncheck input file '$cliInputFile' at line $lineNumber"
 		exit 1
 	fi
 	# TODO: some functions call this one with "<string><padding>" because what matters is the total length.
@@ -45,13 +46,15 @@ makeBlankLine() {
 
 
 makeTextLine1String() {
-	local outputFile=$1
-	local position=$2
-	local string=$3
-	local paddingCharacter=${4:-$blankCharacter}
+	local cliInputFile=$1
+	local outputFile=$2
+	local position=$3
+	local string=$4
+	local paddingCharacter=${5:-$blankCharacter}
+
 	local stringLength=${#string}
 
-	checkStringIsShortherThan "$string" "$nbColumns"
+	checkStringIsShortherThan "$string" "$nbColumns" "$cliInputFile"
 
 	# NB: for all 'echo' below :
 	#     'echo' discards leading/trailing spaces, which is why the whole strings to 'echo' are quoted
@@ -75,11 +78,12 @@ makeTextLine1String() {
 
 
 makeTextLine2Strings() {
-	local outputFile=$1
-	local position=$2
-	local string1=$3
-	local string2=$4
-	local paddingCharacter=${5:-$blankCharacter}
+	local cliInputFile=$1
+	local outputFile=$2
+	local position=$3
+	local string1=$4
+	local string2=$5
+	local paddingCharacter=${6:-$blankCharacter}
 
 	local string1Length=${#string1}
 	local string2Length=${#string2}
@@ -102,7 +106,7 @@ use '1string|right|$string2' instead"
 		}
 
 	for i in "$string1" "$string2" "$string1$string2"; do
-		checkStringIsShortherThan "$i" "$nbColumns"
+		checkStringIsShortherThan "$i" "$nbColumns" "$cliInputFile"
 	done
 
 	case "$position" in
@@ -117,30 +121,32 @@ use '1string|right|$string2' instead"
 
 
 makeTextLinePadded() {
-	local outputFile=$1
-	local position=$2
-	local string=$3
-	local paddingWidth=$4
-	local paddingCharacter=${5:-$blankCharacter}
+	local cliInputFile=$1
+	local outputFile=$2
+	local position=$3
+	local string=$4
+	local paddingWidth=$5
+	local paddingCharacter=${6:-$blankCharacter}
 
 	[ -z "$paddingWidth" ] && {
-		lineNumber=$(grep -nF "$string$separator" "$inputFile" | cut -d ':' -f 1)
+		lineNumber=$(grep -nF "$string$commandParametersSeparator" "$inputFile" | cut -d ':' -f 1)
 		message error "No padding width specified in input file '$inputFile' at line $lineNumber."
 		exit 1
 		}
 
 	[ "$paddingWidth" -eq 0 ] && {
-		lineNumber=$(grep -nF "$string${separator}0" "$inputFile" | cut -d ':' -f 1)
+		lineNumber=$(grep -nF "$string${commandParametersSeparator}0" "$inputFile" | cut -d ':' -f 1)
 		message error "Padding width set to 0 in '$inputFile' at line $lineNumber : useless use of 'padded|$position', use '1string|$position' instead."
 		exit 1
 		}
 
 	padding=$(repeatStringUpToNCharacters "$paddingCharacter" "$paddingWidth")
-	checkStringIsShortherThan "$string$padding" "$nbColumns"
+	checkStringIsShortherThan "$string$padding" "$nbColumns" "$cliInputFile"
+	# TODO: checking the length of "$string$padding" gets it when it's too long, but can't find it when 'grep'ing the input, and reports an empty line number.
 
 	restOfLinePaddingWitdh=$((nbColumns-paddingWidth-${#string}))
 	[ "$restOfLinePaddingWitdh" -eq 0 ] && {
-		lineNumber=$(grep -nF "$string$separator" "$inputFile" | cut -d ':' -f 1)
+		lineNumber=$(grep -nF "$string$commandParametersSeparator" "$inputFile" | cut -d ':' -f 1)
 		oppositePosition='right'
 		[ "$position" == 'right' ] && oppositePosition='left'
 		message error "Empty 'rest of line padding' in '$inputFile' at line $lineNumber : useless use of 'padded|$position', use '1string|$oppositePosition' instead."
@@ -159,4 +165,66 @@ makeTextLinePadded() {
 	esac
 	# 'echo' discards leading/trailing spaces, which is why the whole strings to 'echo' are quoted
 	echo "$line" >> "$outputFile"
+	}
+
+
+# TODO: 'test' this
+countOccurrencesOfStringInLine() {
+	local string=$1
+	local line=$2
+	echo "$line" | grep -o "$string" | wc -l
+	}
+
+
+runMacros() {
+	local inputFile=$1
+	local tmpFile=$2
+	# read macros from "$inputfile"
+
+	while IFS="$macroArgumentsSeparator" read macro macroName macroCode; do
+
+		nbArgsInMacro=$(countOccurrencesOfStringInLine '\$' "$macroCode")
+
+		# build sed line
+#		search="$macroName$macroArgumentsSeparator(.*)$macroArgumentsSeparator"
+#		search="$macroName$macroArgumentsSeparator(.*)$macroArgumentsSeparator(.*)$macroArgumentsSeparator"
+
+
+		# raise error if macro has '|' when invoked
+		regex="^$macroName[^$commandParametersSeparator]*\\$commandParametersSeparator"
+		grep -Eq "$regex" "$inputFile" && {
+			lineNumber=$(grep -nE "$regex" "$inputFile" | cut -d ':' -f 1)
+			message error "Malformed '$macroName' macro invocation : no '$commandParametersSeparator' allowed ($inputFile at line $lineNumber)"
+			exit 1
+			}
+		# TODO: this works but is ugly : same file 'grep'd twice
+
+
+		search="$macroName"
+		for i in $(seq 1 "$nbArgsInMacro"); do
+			search+="$macroArgumentsSeparator(.*)"
+		done
+		search+="$macroArgumentsSeparator"
+
+		replace=$(echo "$macroCode" | tr '$' '\\')
+
+#		cat <<-EOF
+#		macro name : $macroName
+#		macro code : $macroCode	   <-- $nbArgsInMacro arguments
+#
+#		search :  '$search'
+#		replace : '$replace'
+#
+#		sed -r "s/$search/$replace/g" "$tmpFile"
+#		=======================
+#		EOF
+
+		#	apply it everywhere on 'new file'
+		sed -ri "s/$search/$replace/g" "$tmpFile"
+
+	done < <(grep -E "^macro$macroArgumentsSeparator" "$inputFile")
+
+#	echo '======================='
+#	cat "$tmpFile"
+#	echo '======================='
 	}

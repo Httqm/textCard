@@ -2,7 +2,32 @@
 #	to screen :	./textCard.sh -i input.txt
 #	to file :	./textCard.sh -i input.txt -o output.txt
 
+######################################### macros definition #########################################
+macro§headerWithLine§1string|left|$1|_|§
+macro§with2Params§2strings|leftright|$1|$2|§
+
+# define a macro:
+#	macro§<macroName>§<macroDefinition>§
+# with :
+#	- macroName			anything you like, provided it doesn't start with 'macro'
+#	- macroDefinition	<command>|<subcommand>|$1|$2|...|$n|§
+#
+# use a macro:
+#	<macroName>§<arg1>§<arg2>§...§<arg_n>§
+
+######################################### body ######################################################
+
 blank
+1string|center|===> below are lines made by macros <===
+headerWithLine§This is a header with a line (via a macro)§
+# malformed macro invocation
+#with2Params|left|right|
+# fix
+with2Params§left§right§
+
+1string|center|===> above are lines made by macros <===
+blank
+
 
 1string|left|PURE LEFT
 1string|left| LEFT WITH A SPACE
@@ -47,11 +72,11 @@ blank
 
 ######################################### 1string
 # triggers error : "line too long"
-#1string|left|Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vivamus efficitur quam ex, id accumsan justo faucibus vitae.
+#1string|left|Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vivamus efficitur quam ex, id accumsan justo faucibus vitae. (1string,left)
 
 ######################################### padded
 # triggers error : "line too long"
-#padded|left|Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vivamus efficitur quam ex, id accumsan justo faucibus vitae.|3|
+#padded|left|Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vivamus efficitur quam ex, id accumsan justo faucibus vitae. (padded,left)|3|
 
 # triggers error (with page width = 106 chars) :
 #padded|left|PADDED LEFT - TRIGGER ERROR NULL REST_OF_LINE_PADDING|53|=|
@@ -64,6 +89,9 @@ blank
 #1string|left|PADDED RIGHT - TRIGGER ERROR NULL REST_OF_LINE_PADDING|=|
 
 ######################################### 2strings
+# triggers error : "line too long"
+#2strings|leftright|Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vivamus efficitur quam ex, id accumsan justo faucibus vitae. (2strings,leftright)|RIGHT|
+
 # triggers error : "useless use of '2strings|leftright|<left>|<right>'"
 #2strings|leftright|TEST LEFT
 # fix

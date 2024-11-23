@@ -16,7 +16,7 @@ test_makeTextLine1String_generatedStringLength() {
 #		echo $listOfLengthsToTest
 		for lengthToTest in $listOfLengthsToTest; do
 			textSample=$(repeatStringUpToNCharacters 'X' "$lengthToTest")
-			output=$(makeTextLine1String '/dev/stdout' "$position" "$textSample")
+			output=$(makeTextLine1String '' '/dev/stdout' "$position" "$textSample")
 #			echo "$position $lengthToTest [$output]"
 			assert_equals "$nbColumns" "${#output}"
 		done
@@ -31,7 +31,7 @@ test_makeTextLine1String_inputStringTooLong() {
 
 	textSample=$(repeatStringUpToNCharacters 'X' "$lengthOfTooLongString")
 	# This is tested before checking the left/center/right, hence "whatever"
-	assert_status_code 1 "makeTextLine1String '/dev/stdout' whatever $textSample"
+	assert_status_code 1 "makeTextLine1String '' '/dev/stdout' whatever $textSample"
 	}
 
 
@@ -43,7 +43,7 @@ test_makeTextLine1String_left() {
 		textSampleLength=${#textSample}
 		padding=$((nbColumns-textSampleLength))
 		expected="$textSample"$(repeatStringUpToNCharacters "$blankCharacter" "$padding")
-		output=$(makeTextLine1String '/dev/stdout' 'left' "$textSample")
+		output=$(makeTextLine1String '' '/dev/stdout' 'left' "$textSample")
 #		echo "$lengthToTest [$output]"
 		assert_equals "$expected" "$output"
 	done
@@ -58,7 +58,7 @@ test_makeTextLine1String_right() {
 		textSampleLength=${#textSample}
 		padding=$((nbColumns-textSampleLength))
 		expected="$(repeatStringUpToNCharacters "$blankCharacter" "$padding")$textSample"
-		output=$(makeTextLine1String '/dev/stdout' 'right' "$textSample")
+		output=$(makeTextLine1String '' '/dev/stdout' 'right' "$textSample")
 #		echo "$lengthToTest [$output]"
 		assert_equals "$expected" "$output"
 	done
@@ -74,7 +74,7 @@ test_makeTextLine1String_center() {
 		leftPadding=$(((nbColumns+1-textSampleLength)/2))
 		rightPadding=$((nbColumns-textSampleLength-leftPadding))
 		expected="$(repeatStringUpToNCharacters "$blankCharacter" "$leftPadding")$textSample$(repeatStringUpToNCharacters "$blankCharacter" "$rightPadding")"
-		output=$(makeTextLine1String '/dev/stdout' 'center' "$textSample")
+		output=$(makeTextLine1String '' '/dev/stdout' 'center' "$textSample")
 #		echo "$lengthToTest [$output]"
 		assert_equals "$expected" "$output"
 	done

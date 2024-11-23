@@ -25,10 +25,10 @@ test_makeTextLinePadded_inputStringTooLong() {
 	# I must get an error if the total length of (padding + string) is longer that "$nbColumns"
 	while read lengthPadding lengthString; do
 		string=$(repeatStringUpToNCharacters 'S' "$lengthString")
-		output=$(makeTextLinePadded '/dev/stdout' 'whatever' "$string" "$lengthPadding" '_')
+		output=$(makeTextLinePadded $inputFile '/dev/stdout' 'whatever' "$string" "$lengthPadding" '_')
 #		echo "$lengthPadding $lengthString [$output]"
 		# This is tested before checking the left/right, hence "whatever"
-		assert_status_code 1 "makeTextLinePadded '/dev/stdout' 'whateverPosition' \"$string\" \"$lengthPadding\" '_'"
+		assert_status_code 1 "makeTextLinePadded $inputFile '/dev/stdout' 'whateverPosition' \"$string\" \"$lengthPadding\" '_'"
 	done < <(cat <<-EOF
 		0							$((nbColumns+1))
 		$((nbColumns+1)) 			0
@@ -44,7 +44,7 @@ test_makeTextLinePadded_nullPaddingWidthForbidden() {
 	# Using 'padded|left' or 'padded|right' with a null padding width is the same than using
 	# '1string|left' or '1string|right' directly, and is forbidden.
 	# Just checking this is enforced.
-	assert_status_code 1 "makeTextLinePadded '/dev/stdout' 'whateverPosition' 'whateverString' 0 _"
+	assert_status_code 1 "makeTextLinePadded $inputFile '/dev/stdout' 'whateverPosition' 'whateverString' 0 _"
 	}
 
 
@@ -62,7 +62,7 @@ test_makeTextLinePadded_stringPlusPaddingLengthEqualNbColumns() {
 #			[ "$lengthPadding" -eq 0 ] && lengthPadding=1	# avoid the 'null padding' error, tested above
 			string=$(repeatStringUpToNCharacters 'S' "$lengthString")
 #			echo "$position $lengthString $lengthPadding $((nbColumns-lengthString-lengthPadding))"
-			assert_status_code 1 "makeTextLinePadded '/dev/stdout' \"$position\" \"$string\" \"$lengthPadding\" '_'"
+			assert_status_code 1 "makeTextLinePadded $inputFile '/dev/stdout' \"$position\" \"$string\" \"$lengthPadding\" '_'"
 		done
 	done
 	}
@@ -75,7 +75,7 @@ test_makeTextLinePadded_generatedStringLength() {
 			lengthPadding=$((RANDOM % (nbColumns/2)))
 			[ "$lengthPadding" -eq 0 ] && lengthPadding=1	# avoid the 'null padding' error, tested above
 			string=$(repeatStringUpToNCharacters 'S' "$lengthString")
-			output=$(makeTextLinePadded '/dev/stdout' "$position" "$string" "$lengthPadding" '_')
+			output=$(makeTextLinePadded $inputFile '/dev/stdout' "$position" "$string" "$lengthPadding" '_')
 #			echo "$position $lengthString $lengthPadding [$output]"
 			assert_equals "$nbColumns" "${#output}"
 		done
@@ -91,10 +91,10 @@ test_makeTextLinePadded_generatedStringLength() {
 #	while read stringLeft stringRight; do
 #		textLeft=$(repeatStringUpToNCharacters 'X' "$length1")
 #		textRight=$(repeatStringUpToNCharacters 'X' "$length2")
-#		output=$(makeTextLinePadded '/dev/stdout' "$position" "$textLeft" "$textRight")
+#		output=$(makeTextLinePadded $inputFile '/dev/stdout' "$position" "$textLeft" "$textRight")
 ##		echo "$position $length1 $length2 [$output]"
 #		# This is tested before checking the 'leftright/other', hence "whatever"
-#		assert_status_code 1 "makeTextLinePadded whatever $stringLeft $stringRight"
+#		assert_status_code 1 "makeTextLinePadded $inputFile whatever $stringLeft $stringRight"
 #	done < <(cat <<-EOF
 #		left	''
 #		''		right
@@ -112,7 +112,7 @@ test_makeTextLinePadded_generatedStringLength() {
 #		textRight=$(repeatStringUpToNCharacters 'R' "$lengthRight")
 #		padding=$(repeatStringUpToNCharacters "$blankCharacter" $((nbColumns-lengthLeft-lengthRight)))
 #		expected="$textLeft$padding$textRight"
-#		output=$(makeTextLinePadded '/dev/stdout' 'leftright' "$textLeft" "$textRight")
+#		output=$(makeTextLinePadded $inputFile '/dev/stdout' 'leftright' "$textLeft" "$textRight")
 ##		echo "expected: '$expected', output: '$output'"
 #		assert_equals "$expected" "$output"
 #	done < <(cat <<-EOF
