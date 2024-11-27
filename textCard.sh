@@ -5,10 +5,10 @@ usage() {
 
 	    Layout text on a rectangular area aka 'card'.
 
-	    Usage: $0 -i <inputFile> [other options]
+	    Usage: $0 -i <inputFile> [options]
 
 	    Options:
-	    -c <lang>        spell [c]heck <inputFile> with 'aspell' and its <lang> dictionary
+	    -c <lang>        spell [c]heck <inputFile> with 'aspell' using its <lang> dictionary
 	    -h               show this [h]elp and exit
 	    -i <inputFile>   load text from <[i]nputFile>
 	    -o <outputFile>  write result to <outputFile>
@@ -16,6 +16,7 @@ usage() {
 	                     - once generated, you may open it in a web browser and
 	                       - view next version with [F5]
 	                       - convert it to PDF with 'Print to file'
+	    -v               [v]erbose mode
 
 	EOF
 	}
@@ -29,15 +30,18 @@ getCliParameters() {
 		exit 1
 		}
 
-	while getopts ':c:hi:o:' opt; do
+	while getopts ':c:hi:o:v' opt; do
 		case "$opt" in
 			c)
-#				message info 'spell check enabled'
+				[ "$verbose" -eq 1 ] && message info 'spell check enabled'
 				dictionary="$OPTARG"
-				aspell dump dicts | grep -Eq "^$dictionary$" \
-					&& message info "Dictionary '$dictionary' available" \
-					|| { message error "No aspell dictionary '$dictionary' found"; exit 1; }
-				# TODO: replace 'dict xx available' with 'spelling (xx) ok' (see below)
+
+				aspell dump dicts | grep -Eq "^$dictionary$"
+				if [ "$?" -eq 0 ]; then
+					[ "$verbose" -eq 1 ] && message info "dictionary '$dictionary' available"
+				else
+					message error "No aspell dictionary '$dictionary' found"; exit 1;
+				fi
 				;;
 			i)
 				cliInputFile="$OPTARG"
@@ -47,6 +51,7 @@ getCliParameters() {
 			o)
 				outputFile="$OPTARG"
 				;;
+			v)	verbose=1 ;;
 			:)	message error "no value given for option '-$OPTARG'"; usage; exit 1 ;;
 			\?)	message error "invalid option: '-$OPTARG'"; usage; exit 1 ;;
 		esac
@@ -101,7 +106,7 @@ checkNbLinesOnCard() {
 	[ "$(abs $nbLinesAvailableOnCard)" -gt "1" ] && LINES='lines' || LINES='line'
 	messageNbLines="Number of lines = $nbLinesOnCard / $nbLines"
 	if [ "$nbLinesAvailableOnCard" -ge "0" ]; then
-		message info "$messageNbLines ($nbLinesAvailableOnCard $LINES left)"
+		[ "$verbose" -eq 1 ] && message info "$messageNbLines ($nbLinesAvailableOnCard $LINES left)" || :
 	else
 		message error "$messageNbLines (cut $(abs $nbLinesAvailableOnCard) $LINES to fit a single page)"
 	fi
@@ -141,6 +146,7 @@ main() {
 		source "$directoryOfThisScript/$functionFile"
 	done
 
+	verbose=0
 	nbLinesOnCard=0
 	dictionary=''						# can be populated by '-c <value>' from CLI
 	outputFile="$defaultOutputFile"		# may be overridden by '-o <outputFile>' from CLI
@@ -148,7 +154,9 @@ main() {
 	getCliParameters "$@"
 
 	[ -n "$dictionary" ] && {
-		spellCheckInputFile "$cliInputFile" "$dictionary" && message info "Spelling ($dictionary) OK 👍"
+		spellCheckInputFile "$cliInputFile" "$dictionary" && \
+			[ "$verbose" -eq 1 ] && \
+				message info "spelling ($dictionary) OK 👍"
 		}
 
 	> "$outputFile"
@@ -156,7 +164,7 @@ main() {
 
 	# handle macros
 	if $(grep -Eq "^[^#]*$macroArgumentsSeparator" "$cliInputFile") ; then
-		message info 'macro(s) found'
+		[ "$verbose" -eq 1 ] && message info 'macro(s) found'
 
 		tmpFile=$(mktemp --tmpdir='/run/shm' $(basename $0).XXXXXXXXXXXX.tmp)
 #		echo "$tmpFile"
@@ -169,7 +177,7 @@ main() {
 
 		[ -f "$tmpFile" ] && rm "$tmpFile"
 	else
-		message info 'no macro found, working as usual'
+		[ "$verbose" -eq 1 ] && message info 'no macro found, working as usual'
 		makeCard "$cliInputFile" "$outputFile" "$cliInputFile"
 	fi
 
@@ -180,12 +188,6 @@ main() {
 
 main "$@"
 # TODO:
-# - add a 'verbose' flag + show 'info' messages accordingly :
-#	- transmit "verbose mode" variable to function so that the 'if' is handled there
-#	- OR have a 'destinationOfInfoMessages' variable set to :
-#		- /dev/stdout if 'verbose mode'
-#		- /dev/null otherwise
-#		==> no 'if', always 'echo', the only difference is the destination
 # - clean commented lines:	grep -riEn '^#' *sh
 # - check words of "aspell word list" still exist in input txt file
 # - add more formatting functions :
