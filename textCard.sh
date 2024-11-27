@@ -77,19 +77,15 @@ makeCard() {
 		case "${myArray[0]}" in
 			blank)
 				makeBlankLine "$outputFile"
-				((nbLinesOnCard++))
 				;;
 			1string)
 				makeTextLine1String "$cliInputFile" "$outputFile" "${myArray[1]}" "${myArray[2]}" "${myArray[3]}"
-				((nbLinesOnCard++))
 				;;
 			2strings)
 				makeTextLine2Strings "$cliInputFile" "$outputFile" "${myArray[1]}" "${myArray[2]}" "${myArray[3]}" "${myArray[4]}"
-				((nbLinesOnCard++))
 				;;
 			padded)
 				makeTextLinePadded "$cliInputFile" "$outputFile" "${myArray[1]}" "${myArray[2]}" "${myArray[3]}" "${myArray[4]}"
-				((nbLinesOnCard++)) # TODO: factorize the ++ at the end of the 'case'
 				;;
 			*)
 				lineNumber=$(grep -nF "${myArray[0]}" "$cliInputFile" | cut -d ':' -f 1)
@@ -97,6 +93,7 @@ makeCard() {
 				exit 1
 				;;
 		esac
+		((nbLinesOnCard++))
 	done < "$inputFile"
 	}
 
@@ -188,6 +185,7 @@ main() {
 
 main "$@"
 # TODO:
+# - do all TODOs : grep -riEn 'TODO' *sh
 # - clean commented lines:	grep -riEn '^#' *sh
 # - check words of "aspell word list" still exist in input txt file
 # - add more formatting functions :
