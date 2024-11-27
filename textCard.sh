@@ -79,13 +79,30 @@ makeCard() {
 				makeBlankLine "$outputFile"
 				;;
 			1string)
-				makeTextLine1String "$cliInputFile" "$outputFile" "${myArray[1]}" "${myArray[2]}" "${myArray[3]}"
+				makeTextLine1String \
+					"$cliInputFile" \
+					"$outputFile" \
+					"${myArray[1]}" \
+					"${myArray[2]}" \
+					"${myArray[3]}"
 				;;
 			2strings)
-				makeTextLine2Strings "$cliInputFile" "$outputFile" "${myArray[1]}" "${myArray[2]}" "${myArray[3]}" "${myArray[4]}"
+				makeTextLine2Strings \
+					"$cliInputFile" \
+					"$outputFile" \
+					"${myArray[1]}" \
+					"${myArray[2]}" \
+					"${myArray[3]}" \
+					"${myArray[4]}"
 				;;
 			padded)
-				makeTextLinePadded "$cliInputFile" "$outputFile" "${myArray[1]}" "${myArray[2]}" "${myArray[3]}" "${myArray[4]}"
+				makeTextLinePadded \
+					"$cliInputFile" \
+					"$outputFile" \
+					"${myArray[1]}" \
+					"${myArray[2]}" \
+					"${myArray[3]}" \
+					"${myArray[4]}"
 				;;
 			*)
 				lineNumber=$(grep -nF "${myArray[0]}" "$cliInputFile" | cut -d ':' -f 1)
@@ -137,6 +154,15 @@ copyPayloadIntoFile() {
 	}
 
 
+doSpellCheck() {
+	[ -n "$dictionary" ] && {
+		spellCheckInputFile "$cliInputFile" "$dictionary" && \
+			[ "$verbose" -eq 1 ] && \
+				message info "spelling ($dictionary) OK 👍"
+		}
+	}
+
+
 main() {
 	directoryOfThisScript="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 	for functionFile in config.sh textCard_functions.sh functions.sh; do
@@ -149,29 +175,16 @@ main() {
 	outputFile="$defaultOutputFile"		# may be overridden by '-o <outputFile>' from CLI
 
 	getCliParameters "$@"
-
-	[ -n "$dictionary" ] && {
-		spellCheckInputFile "$cliInputFile" "$dictionary" && \
-			[ "$verbose" -eq 1 ] && \
-				message info "spelling ($dictionary) OK 👍"
-		}
-
+	doSpellCheck
 	> "$outputFile"
-	# TODO: use exec > /path/to/logFile 2>&1 construct (?)
 
 	# handle macros
 	if $(grep -Eq "^[^#]*$macroArgumentsSeparator" "$cliInputFile") ; then
 		[ "$verbose" -eq 1 ] && message info 'macro(s) found'
-
 		tmpFile=$(mktemp --tmpdir='/run/shm' $(basename $0).XXXXXXXXXXXX.tmp)
-#		echo "$tmpFile"
-
 		copyPayloadIntoFile "$cliInputFile" "$tmpFile"
 		runMacros "$cliInputFile" "$tmpFile"
-
-#		cat "$tmpFile"
 		makeCard "$tmpFile" "$outputFile" "$cliInputFile"
-
 		[ -f "$tmpFile" ] && rm "$tmpFile"
 	else
 		[ "$verbose" -eq 1 ] && message info 'no macro found, working as usual'
