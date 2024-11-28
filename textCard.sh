@@ -138,12 +138,50 @@ copyPayloadIntoFile() {
 	}
 
 
+cleanPersonalWordList() {
+	local fileToSpellCheck=$1
+	local personalWordList=$2
+	# Words that don't exist in Aspell's dictionary are added to the personal word list upon spell check.
+	# But if such words disappear from the spell checked document after edits, they are not removed from
+	# the personal list, which may grow out of proportions.
+	# This function checks that each word of the personal word list is still used in the document,
+	# and removes it from the list otherwise.
+	# checking words of our Aspell personal list are still in the document to check
+	listOfPersonalWordsToKeep=$(head -1 "$personalWordList")
+	listOfPersonalWordsToRemove=''
+	nbWordsToRemoveFromPersonalList=0
+	while read wordOfPersonalList; do
+#		echo "$wordOfPersonalList"
+		grep -q "$wordOfPersonalList" "$fileToSpellCheck" \
+			&& listOfPersonalWordsToKeep+="\n$wordOfPersonalList" \
+			|| {
+				listOfPersonalWordsToRemove+="$wordOfPersonalList, "
+				((nbWordsToRemoveFromPersonalList++))
+				}
+	done < <(tail -n +2 "$personalWordList")
+
+	if [ "$nbWordsToRemoveFromPersonalList" -gt 0 ]; then	# i.e. when "at least 1 word found"
+		[ "$verbose" -eq 1 ] && {
+			[ "$nbWordsToRemoveFromPersonalList" -gt 1 ] && WORD='Words' || WORD='Word'
+			message info "$WORD not found anymore in '$fileToSpellCheck' and removed from '$personalWordList' :\n\t$listOfPersonalWordsToRemove"
+			}
+		echo -e "$listOfPersonalWordsToKeep" > "$personalWordList"
+		# This re-writes the header line of the personal word list as-is, including the number of items
+		# in the list, which is wrong now. This has no consequence so far.
+		# This wrong number can be fixed by removing one of the words from the list + launching a spell check,
+		# so that Aspell rewrites the list with the fixed header.
+	fi
+	}
+
+
 doSpellCheck() {
 	local fileToSpellCheck=$1
 	local dictionary=$2
 
-	personalWordList="${fileToSpellCheck}_personalWordList"
-	replacementList="${fileToSpellCheck}_replacementList"
+	local personalWordList="${fileToSpellCheck}_personalWordList"
+	local replacementList="${fileToSpellCheck}_replacementList"
+
+	cleanPersonalWordList "$fileToSpellCheck" "$personalWordList"
 
 	[ -n "$dictionary" ] && {
 		aspell \
@@ -196,7 +234,6 @@ main "$@"
 # TODO:
 # - do all TODOs : grep -riEn 'TODO' *sh
 # - clean commented lines:	grep -riEn '^#' *sh
-# - check words of "aspell word list" still exist in input txt file
 # - add more formatting functions :
 #	- LEFTCENTERRIGHT : 'LEFT     CENTER     RIGHT'
 #	- 2COLS :           '    LEFT        RIGHT    '
