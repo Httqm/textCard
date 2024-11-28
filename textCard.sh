@@ -127,22 +127,6 @@ checkNbLinesOnCard() {
 	}
 
 
-spellCheckInputFile() {
-	local inputFile=$1
-	local dictionary=$2
-	personalWordList="${inputFile}_personalWordList"
-	replacementList="${inputFile}_replacementList"
-#	echo "wordLists : '$personalWordList', '$replacementList'"
-	aspell \
-		-d "$dictionary" \
-		--sug-mode=bad-spellers \
-		--personal="$personalWordList" \
-		--repl="$replacementList" \
-		--dont-backup \
-		check "$inputFile"
-	}
-
-
 copyPayloadIntoFile() {
 	# copy everything from "$sourceFile" into "$destinationFile" EXCEPT
 	#	- macros
@@ -155,10 +139,22 @@ copyPayloadIntoFile() {
 
 
 doSpellCheck() {
+	local fileToSpellCheck=$1
+	local dictionary=$2
+
+	personalWordList="${fileToSpellCheck}_personalWordList"
+	replacementList="${fileToSpellCheck}_replacementList"
+
 	[ -n "$dictionary" ] && {
-		spellCheckInputFile "$cliInputFile" "$dictionary" && \
-			[ "$verbose" -eq 1 ] && \
-				message info "spelling ($dictionary) OK 👍"
+		aspell \
+			-d "$dictionary" \
+			--sug-mode=bad-spellers \
+			--personal="$personalWordList" \
+			--repl="$replacementList" \
+			--dont-backup \
+			check "$fileToSpellCheck" && \
+				[ "$verbose" -eq 1 ] && \
+					message info "spelling ($dictionary) OK 👍"
 		}
 	}
 
@@ -175,7 +171,7 @@ main() {
 	outputFile="$defaultOutputFile"		# may be overridden by '-o <outputFile>' from CLI
 
 	getCliParameters "$@"
-	doSpellCheck
+	doSpellCheck "$cliInputFile" "$dictionary"
 	> "$outputFile"
 
 	# handle macros
