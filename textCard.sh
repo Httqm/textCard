@@ -209,7 +209,10 @@ main() {
 	outputFile="$defaultOutputFile"		# may be overridden by '-o <outputFile>' from CLI
 
 	getCliParameters "$@"
-	doSpellCheck "$cliInputFile" "$dictionary"
+
+	# "$dictionary" exists when the script was launched with '-c <lang>'
+	[ -n "$dictionary" ] && doSpellCheck "$cliInputFile" "$dictionary"
+
 	> "$outputFile"
 
 	# handle macros
