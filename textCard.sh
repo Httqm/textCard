@@ -147,7 +147,11 @@ cleanPersonalWordList() {
 	# This function checks that each word of the personal word list is still used in the document,
 	# and removes it from the list otherwise.
 	# checking words of our Aspell personal list are still in the document to check
-	listOfPersonalWordsToKeep=$(head -1 "$personalWordList")
+
+	[ -e "$personalWordList" ] && listOfPersonalWordsToKeep=$(head -1 "$personalWordList") || {
+		message 'warning' "Personal word list '$personalWordList' not found: spell check will use dictionary words only."
+		return
+		}
 	listOfPersonalWordsToRemove=''
 	nbWordsToRemoveFromPersonalList=0
 	while read wordOfPersonalList; do
