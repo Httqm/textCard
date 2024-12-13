@@ -214,7 +214,7 @@ main() {
 
 	# handle macros
 	if $(grep -Eq "^[^#]*$macroArgumentsSeparator" "$cliInputFile") ; then
-		[ "$verbose" -eq 1 ] && message info 'macro(s) found'
+#		echo 'macro(s) found'
 		tmpFile=$(mktemp --tmpdir='/run/shm' $(basename $0).XXXXXXXXXXXX.tmp)
 		copyPayloadIntoFile "$cliInputFile" "$tmpFile"
 		runMacros "$cliInputFile" "$tmpFile"
