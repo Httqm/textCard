@@ -178,8 +178,10 @@ doSpellCheck() {
 	local fileToSpellCheck=$1
 	local dictionary=$2
 
-	local personalWordList="${fileToSpellCheck}_personalWordList"
-	local replacementList="${fileToSpellCheck}_replacementList"
+	local listsBaseName="$(dirname "$fileToSpellCheck")/${fileToSpellCheck}_"
+	local personalWordList="${listsBaseName}personalWordList"
+	local  replacementList="${listsBaseName}replacementList"
+	# so that personal lists are next to our input file
 
 	cleanPersonalWordList "$fileToSpellCheck" "$personalWordList"
 
